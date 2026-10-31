@@ -1,8 +1,8 @@
-# BankSSL Tracker
+# SSL Tracker
 
 A small, lean, production-grade SSL/TLS certificate tracking and monitoring web application built with Python 3.11+, FastAPI, Jinja2 server-rendered templates, and SQLAlchemy with SQLite.
 
-BankSSL Tracker connects to user-specified domains over TLS with Server Name Indication (SNI), reads certificates, detects expiration and verification anomalies without crashing, retains a history of all checks, and provides an uncluttered dashboard and command-line interface.
+SSL Tracker connects to user-specified domains over TLS with Server Name Indication (SNI), reads certificates, detects expiration and verification anomalies without crashing, retains a history of all checks, and provides an uncluttered dashboard and command-line interface.
 
 ---
 
@@ -68,7 +68,7 @@ Copy `.env.example` to `.env`:
 cp .env.example .env
 ```
 Environment variables:
-- `DATABASE_URL`: SQLAlchemy connection string (default: `sqlite:///./bankssl.db`)
+- `DATABASE_URL`: SQLAlchemy connection string (default: `sqlite:///./ssl.db`)
 - `CHECK_TIMEOUT`: Socket and TLS handshake timeout in seconds (default: `10.0`)
 - `HOST`: Server bind address (default: `127.0.0.1`)
 - `PORT`: Server bind port (default: `8000`)
@@ -94,7 +94,7 @@ Visit [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
 
 ## Command Line Interface (CLI)
 
-BankSSL Tracker includes a standalone CLI:
+SSL Tracker includes a standalone CLI:
 
 ### Check All Tracked Domains
 Runs concurrent checks across all tracked domains in the database and prints a table sorted by days remaining:
