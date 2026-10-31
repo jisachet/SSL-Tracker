@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}BankSSL Tracker{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔒</text></svg>">
+</head>
+<body>
+  <header class="app-header">
+    <div class="container header-inner">
+      <a href="/" class="brand-wrap">
+        <div class="brand-icon">🔒</div>
+        <div>
+          <span class="brand-name">BankSSL Tracker</span>
+          <span class="brand-tag">TLS Monitor</span>
+        </div>
+      </a>
+      <nav class="nav-actions">
+        <a href="/" class="btn btn-outline btn-sm">Domains</a>
+        <a href="/domains/new" class="btn btn-primary btn-sm">+ Add Domain</a>
+        <a href="/domains/bulk" class="btn btn-outline btn-sm">Bulk Add</a>
+        <a href="/export/csv" class="btn btn-outline btn-sm" title="Export Table as CSV">Export CSV</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container">
+      {% if flash_message %}
+      <div class="flash-message flash-{{ flash_type or 'info' }}">
+        <span>{{ flash_message }}</span>
+      </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="container">
+      <span>BankSSL Tracker &bull; Lean SSL/TLS Certificate Monitor &bull; SNI Handshakes & History</span>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}BankSSL Tracker - {{ domain.hostname }}:{{ domain.port }}{% endblock %}
+
+{% block content %}
+<div style="margin-top: 1rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <a href="/" style="color: var(--primary); font-size: 0.85rem; text-decoration: none; font-weight: 600;">&larr; Back to Dashboard</a>
+    <h1 style="font-size: 1.6rem; font-weight: 800; margin-top: 0.25rem; display: flex; align-items: center; gap: 0.6rem;">
+      {{ domain.hostname }}:{{ domain.port }}
+      {% if domain.label %}
+        <span style="font-size: 0.85rem; font-weight: 600; background: #e2e8f0; color: #334155; padding: 0.2rem 0.6rem; border-radius: 9999px;">
+          {{ domain.label }}
+        </span>
+      {% endif %}
+      <span class="badge badge-{{ color_code }}">
+        {{ domain.status }}
+      </span>
+    </h1>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem; align-items: center;">
+    <form method="post" action="/domains/{{ domain.id }}/check" style="display: inline;">
+      <button type="submit" class="btn btn-primary btn-sm">
+        ⚡ Check Now
+      </button>
+    </form>
+    <a href="/domains/{{ domain.id }}/edit" class="btn btn-outline btn-sm">
+      Edit
+    </a>
+    <form method="post" action="/domains/{{ domain.id }}/delete" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this domain and all its check history?');">
+      <button type="submit" class="btn btn-danger btn-sm">
+        Delete
+      </button>
+    </form>
+  </div>
+</div>
+
+{% if domain.error_message %}
+<div class="flash-message flash-error" style="margin-top: 0; margin-bottom: 1.25rem;">
+  <div>
+    <strong>Validation / Connection Issue:</strong> {{ domain.error_message }}
+  </div>
+</div>
+{% endif %}
+
+<!-- Certificate Overview Card -->
+<div class="card">
+  <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem; border-bottom: 1px solid var(--border-light); padding-bottom: 0.5rem;">
+    Current Certificate Details
+  </h2>
+
+  {% if domain.status == 'NOT CHECKED' %}
+    <p style="color: var(--text-muted);">This domain has not been checked yet. Click "Check Now" above to initiate an SSL/TLS check.</p>
+  {% else %}
+    <div class="detail-grid">
+      <div class="detail-item">
+        <div class="detail-label">Status & Days Left</div>
+        <div class="detail-value">
+          <span class="badge badge-{{ color_code }}">{{ domain.status }}</span>
+          {% if domain.days_remaining is not none %}
+            <span style="margin-left: 0.5rem; font-size: 0.95rem;">
+              {% if domain.days_remaining < 0 %}
+                {{ domain.days_remaining|abs }} days expired
+              {% else %}
+                {{ domain.days_remaining }} days remaining
+              {% endif %}
+            </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="detail-item">
+        <div class="detail-label">Expiry Date (notAfter)</div>
+        <div class="detail-value detail-code">
+          {{ domain.not_after.strftime('%Y-%m-%d %H:%M:%S UTC') if domain.not_after else 'N/A' }}
+        </div>
+      </div>
+
+      <div class="detail-item">
+        <div class="detail-label">Trust & Hostname Match</div>
+        <div class="detail-value">
+          <span style="color: {% if domain.chain_trusted %}#059669{% else %}#dc2626{% endif %};">
+            {% if domain.chain_trusted %}&#10004; Chain Trusted{% else %}&#10008; Untrusted Chain{% endif %}
+          </span>
+          &bull;
+          <span style="color: {% if domain.hostname_matches %}#059669{% else %}#dc2626{% endif %};">
+            {% if domain.hostname_matches %}&#10004; Hostname Matches{% else %}&#10008; Hostname Mismatch{% endif %}
+          </span>
+        </div>
+      </div>
+
+      <div class="detail-item">
+        <div class="detail-label">TLS Version</div>
+        <div class="detail-value">
+          {{ domain.tls_version or 'N/A' }}
+        </div>
+      </div>
+
+      <div class="detail-item">
+        <div class="detail-label">Issuer</div>
+        <div class="detail-value" style="font-weight: 500;">
+          {{ domain.issuer or 'N/A' }}
+        </div>
+      </div>
+
+      <div class="detail-item">
+        <div class="detail-label">Subject Common Name (CN)</div>
+        <div class="detail-value detail-code">
+          {{ domain.subject_cn or 'N/A' }}
+        </div>
+      </div>
+
+      <div class="detail-item" style="grid-column: 1 / -1;">
+        <div class="detail-label">SHA-256 Fingerprint</div>
+        <div class="detail-value detail-code" style="font-size: 0.8rem; word-break: break-all;">
+          {{ domain.sha256_fingerprint or 'N/A' }}
+        </div>
+      </div>
+
+      <div class="detail-item" style="grid-column: 1 / -1;">
+        <div class="detail-label">Subject Alternative Names (SANs)</div>
+        <div class="detail-value detail-code" style="font-size: 0.85rem; font-weight: normal; line-height: 1.6;">
+          {% if domain.sans %}
+            {{ domain.sans }}
+          {% else %}
+            <span style="color: var(--text-muted);">None reported</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="detail-item">
+        <div class="detail-label">Last Checked Time</div>
+        <div class="detail-value" style="font-size: 0.85rem; font-weight: 500;">
+          {{ domain.last_checked_at.strftime('%Y-%m-%d %H:%M:%S UTC') if domain.last_checked_at else 'Never' }}
+        </div>
+      </div>
+
+      <div class="detail-item">
+        <div class="detail-label">Target Address</div>
+        <div class="detail-value detail-code">
+          {{ domain.hostname }}:{{ domain.port }}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if domain.notes %}
+  <div style="margin-top: 1rem; padding: 1rem; background: #fffbeb; border-radius: var(--radius-md); border: 1px solid #fde68a;">
+    <div style="font-size: 0.75rem; font-weight: 700; color: #92400e; text-transform: uppercase; margin-bottom: 0.25rem;">Notes</div>
+    <div style="font-size: 0.9rem; color: #78350f; white-space: pre-wrap;">{{ domain.notes }}</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- History Section -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-light); padding-bottom: 0.5rem;">
+    <h2 style="font-size: 1.15rem; font-weight: 700;">Check History ({{ history|length }} checks recorded)</h2>
+  </div>
+
+  {% if not history %}
+    <p style="color: var(--text-muted); font-size: 0.9rem;">No checks recorded yet.</p>
+  {% else %}
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Timestamp (UTC)</th>
+            <th>Status</th>
+            <th>Days Left</th>
+            <th>Expiry Date</th>
+            <th>TLS Version</th>
+            <th>Trusted / Match</th>
+            <th>Error / Diagnostics</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in history %}
+            <tr>
+              <td style="font-family: monospace; font-size: 0.825rem; white-space: nowrap;">
+                {{ h.checked_at.strftime('%Y-%m-%d %H:%M:%S') }}
+              </td>
+              <td>
+                <span class="badge badge-{% if h.status == 'OK' %}green{% elif h.status == 'EXPIRING SOON' %}yellow{% elif h.status == 'EXPIRED' %}red{% elif h.status == 'UNREACHABLE' %}grey{% elif h.status == 'INVALID' %}purple{% else %}grey{% endif %}">
+                  {{ h.status }}
+                </span>
+              </td>
+              <td>
+                {% if h.days_remaining is not none %}
+                  {% if h.days_remaining < 0 %}
+                    <span style="color: var(--color-red-text); font-weight: 600;">Expired ({{ h.days_remaining|abs }}d)</span>
+                  {% else %}
+                    {{ h.days_remaining }}d
+                  {% endif %}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td style="font-family: monospace; font-size: 0.825rem;">
+                {{ h.not_after.strftime('%Y-%m-%d') if h.not_after else '-' }}
+              </td>
+              <td>{{ h.tls_version or '-' }}</td>
+              <td style="font-size: 0.825rem;">
+                {% if h.chain_trusted is not none %}
+                  {{ 'Trusted' if h.chain_trusted else 'Untrusted' }} /
+                  {{ 'Match' if h.hostname_matches else 'Mismatch' }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td style="font-size: 0.8rem; color: var(--text-muted); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ h.error_message or '' }}">
+                {{ h.error_message or 'None' }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

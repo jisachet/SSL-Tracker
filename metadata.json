@@ -1,0 +1,7 @@
+{
+  "name": "BankSSL Tracker",
+  "description": "A lean SSL/TLS certificate monitoring and tracker web application with real-time checks, domain management, and certificate history.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

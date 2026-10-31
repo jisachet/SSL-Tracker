@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}BankSSL Tracker - Dashboard{% endblock %}
+
+{% block content %}
+<div class="toolbar" style="margin-top: 1rem;">
+  <form method="get" action="/" class="search-filter-form">
+    <input 
+      type="text" 
+      name="q" 
+      value="{{ search_query or '' }}" 
+      placeholder="Search by hostname..." 
+      class="input-text search-input"
+    >
+    <select name="status" class="input-select" onchange="this.form.submit()">
+      <option value="" {% if not selected_status %}selected{% endif %}>All Statuses</option>
+      <option value="OK" {% if selected_status == 'OK' %}selected{% endif %}>OK</option>
+      <option value="EXPIRING SOON" {% if selected_status == 'EXPIRING SOON' %}selected{% endif %}>EXPIRING SOON (&le; 30d)</option>
+      <option value="EXPIRED" {% if selected_status == 'EXPIRED' %}selected{% endif %}>EXPIRED</option>
+      <option value="INVALID" {% if selected_status == 'INVALID' %}selected{% endif %}>INVALID (Chain/Host)</option>
+      <option value="UNREACHABLE" {% if selected_status == 'UNREACHABLE' %}selected{% endif %}>UNREACHABLE</option>
+      <option value="NOT CHECKED" {% if selected_status == 'NOT CHECKED' %}selected{% endif %}>NOT CHECKED</option>
+    </select>
+    <button type="submit" class="btn btn-outline btn-sm">Filter</button>
+    {% if search_query or selected_status %}
+      <a href="/" class="btn btn-outline btn-sm" style="color: var(--text-muted);">Clear</a>
+    {% endif %}
+  </form>
+
+  <div style="display: flex; gap: 0.5rem; align-items: center;">
+    {% if total_domains > 0 %}
+    <form method="post" action="/domains/check-all" style="display: inline;">
+      <button type="submit" class="btn btn-primary btn-sm" onclick="this.disabled=true; this.innerText='Checking all...'; this.form.submit();">
+        ⚡ Check All Domains
+      </button>
+    </form>
+    {% endif %}
+    <a href="/domains/new" class="btn btn-outline btn-sm">+ Add Domain</a>
+    <a href="/domains/bulk" class="btn btn-outline btn-sm">Bulk Add</a>
+  </div>
+</div>
+
+{% if not domains %}
+  {% if search_query or selected_status %}
+    <div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <h3 class="empty-title">No matching domains found</h3>
+      <p class="empty-text">No tracked domains matched your filter <strong>"{{ search_query or selected_status }}"</strong>.</p>
+      <a href="/" class="btn btn-outline">Reset Filter</a>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🛡️</div>
+      <h3 class="empty-title">No domains tracked yet</h3>
+      <p class="empty-text">Add your first domain to monitor its SSL/TLS certificate validity, expiry dates, and issuer trust.</p>
+      <div class="empty-actions">
+        <a href="/domains/new" class="btn btn-primary">+ Add Your First Domain</a>
+        <a href="/domains/bulk" class="btn btn-outline">Bulk Add Domains</a>
+        <form method="post" action="/seed" style="display: inline;">
+          <button type="submit" class="btn btn-outline">Seed 3 Sample Domains</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+{% else %}
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Domain : Port</th>
+          <th>Label</th>
+          <th>Status</th>
+          <th>Days Left</th>
+          <th>Expiry Date</th>
+          <th>Issuer</th>
+          <th>Last Checked</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in domains %}
+          <tr class="row-tint-{{ item.color_code }}">
+            <td>
+              <a href="/domains/{{ item.domain.id }}" style="font-weight: 700; color: var(--primary); text-decoration: none;">
+                {{ item.domain.hostname }}:{{ item.domain.port }}
+              </a>
+              {% if item.domain.notes %}
+                <span title="{{ item.domain.notes }}" style="cursor: help; color: var(--text-muted); font-size: 0.8rem; margin-left: 0.25rem;">📝</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.domain.label %}
+                <span style="font-size: 0.85rem; font-weight: 500;">{{ item.domain.label }}</span>
+              {% else %}
+                <span style="color: var(--text-muted); font-size: 0.8rem;">-</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge badge-{{ item.color_code }}">
+                {{ item.domain.status }}
+              </span>
+            </td>
+            <td>
+              {% if item.domain.days_remaining is not none %}
+                {% if item.domain.days_remaining < 0 %}
+                  <strong style="color: var(--color-red-text);">Expired ({{ item.domain.days_remaining|abs }}d ago)</strong>
+                {% else %}
+                  <strong>{{ item.domain.days_remaining }} days</strong>
+                {% endif %}
+              {% else %}
+                <span style="color: var(--text-muted);">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.domain.not_after %}
+                <span style="font-family: monospace; font-size: 0.85rem;">
+                  {{ item.domain.not_after.strftime('%Y-%m-%d') }}
+                </span>
+              {% else %}
+                <span style="color: var(--text-muted);">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.domain.issuer %}
+                <span title="{{ item.domain.issuer }}" style="font-size: 0.85rem;">
+                  {{ item.domain.issuer[:28] }}{% if item.domain.issuer|length > 28 %}...{% endif %}
+                </span>
+              {% else %}
+                <span style="color: var(--text-muted);">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.domain.last_checked_at %}
+                <span style="font-size: 0.8rem; color: var(--text-secondary);" title="{{ item.domain.last_checked_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}">
+                  {{ item.domain.last_checked_at.strftime('%Y-%m-%d %H:%M') }}
+                </span>
+              {% else %}
+                <span style="color: var(--text-muted); font-size: 0.8rem;">Never</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+              <form method="post" action="/domains/{{ item.domain.id }}/check" style="display: inline;">
+                <button type="submit" class="btn btn-outline btn-sm" title="Run SSL check now">
+                  Check Now
+                </button>
+              </form>
+              <a href="/domains/{{ item.domain.id }}" class="btn btn-outline btn-sm" title="View certificate details & history">
+                View
+              </a>
+              <a href="/domains/{{ item.domain.id }}/edit" class="btn btn-outline btn-sm" title="Edit domain details">
+                Edit
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted);">
+    <div>Showing {{ domains|length }} domain(s)</div>
+    <div style="display: flex; gap: 0.75rem;">
+      <a href="/export/csv" class="btn btn-outline btn-sm">📥 Export as CSV</a>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
